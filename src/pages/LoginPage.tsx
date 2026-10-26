@@ -1,17 +1,40 @@
-﻿import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 import { Mail, Lock, Eye, EyeOff, Leaf, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [notice] = useState("Supabase authentication is not yet connected. This form is a UI placeholder.");
+  const navigate = useNavigate();
+const [error, setError] = useState("");
+const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert("Supabase is not connected yet. Please set up your .env.local credentials to enable authentication.");
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  setError("");
+  setLoading(true);
+
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    navigate("/dashboard");
+  } catch {
+    setError("Unable to log in. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #f0fdf4, #dcfce7, #faf8f0)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1rem" }}>
@@ -36,7 +59,11 @@ export default function LoginPage() {
             <AlertCircle size={16} color="#a16207" style={{ marginTop: 2, flexShrink: 0 }} />
             <p style={{ fontSize: "0.8125rem", color: "#a16207", lineHeight: 1.5 }}>{notice}</p>
           </div>
-
+             {error && (
+  <p role="alert" style={{ color: "#b91c1c", marginBottom: "1rem" }}>
+    {error}
+  </p>
+)}
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: "1.25rem" }}>
               <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, color: "#374151", marginBottom: "0.5rem" }}>Email address</label>
@@ -82,10 +109,11 @@ export default function LoginPage() {
             <button
               id="login-submit"
               type="submit"
+              disabled={loading}
               className="btn-primary"
               style={{ width: "100%", justifyContent: "center", padding: "0.75rem", fontSize: "1rem" }}
             >
-              Log In
+               {loading ? "Logging in..." : "Log In"}
             </button>
           </form>
 
